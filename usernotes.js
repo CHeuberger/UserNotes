@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         UserNotes
 // @namespace    heuberger.github.io/...
-// @version      0.2
-// @description  Add user notes to StackOverflow
+// @version      0.3
+// @description  Add notes and rank to StackOverflow users
 // @author       Carlos Heuberger
 // @downloadURL  https://github.com/...
 // @include      /^https?:\/\/(.*\.)?stackoverflow\.com\/users\//
@@ -27,7 +27,7 @@ document.body.style.background = "#ffaaaa";  // I am here! //XXX
 //GM.setValue(rankPrefix+"2164365", -2);  //XXX
 //GM.setValue(notePrefix+"2164365", "feel free to write answer - https://stackoverflow.com/a/73943797/16320675");  //XXX
 
-//GM.setValue(dataPrefix + "16320675", JSON.stringify({"id":"16320675","name":"<self>","rank":99,"note":"myself"}));  //XXX
+GM.setValue(dataPrefix + "16320675", JSON.stringify({"id":"16320675","name":"<self>","rank":99,"note":"myself"}));  //XXX
 //GM.setValue(dataPrefix + "2164365",  JSON.stringify({"id":"2164365","name":"Abra","rank":"-3","note":"feel free to write answer - https://stackoverflow.com/a/73943797/16320675"}));  //XXX
 
 
@@ -57,43 +57,41 @@ if (urlTokens.length >= 6 && urlTokens[3] === "users") {
 
 
 function augmentUserPage(userId) {
-  let div = document.createElement("DIV");
-  div.id = "un-user-banner";
-  div.style.margin = "0px 0px 10px";
-      
   rankNode = document.createTextNode("");
-  div.appendChild(createButton("un-dec-rank", "v", () => updateUser(userId, decUser)));
-  div.appendChild(rankNode);
-  div.appendChild(createButton("un-inc-rank", "^", () => updateUser(userId, incUser)));
+  statusNode = document.createTextNode("");
+  noteNode = document.createTextNode("");
+
+  let rankPanel = document.createElement("SPAN");
+  rankPanel.appendChild(createButton("un-dec-rank", "v", () => updateUser(userId, decUser)));
+  rankPanel.appendChild(rankNode);
+  rankPanel.appendChild(createButton("un-inc-rank", "^", () => updateUser(userId, incUser)));
   //GM.notification("X buttons", "userNotes");  //XXX
   
-  statusNode = document.createTextNode("");
-  let statusSpan = document.createElement("SPAN");
+  let statusPanel = document.createElement("SPAN");
   let italic = document.createElement("I");
   italic.style.margin = "0 10px";
   italic.appendChild(statusNode);
-  statusSpan.appendChild(italic);
-  div.appendChild(statusSpan);
+  statusPanel.appendChild(italic);
   //GM.notification("X statusNode: " + statusNode, "UserNotes");  //XXX
-
-  noteNode = document.createTextNode("");
-  let noteSpan = document.createElement("SPAN");
-  noteSpan.ondblclick = () => GM.notification("X note", "UserNotes");  //XXX
-  noteSpan.appendChild(document.createTextNode("  Note: "));
-  noteSpan.appendChild(noteNode);
-  div.appendChild(noteSpan);
-  //GM.notification("X noteNode: " + noteNode, "UserNotes");  //XXX
-
+  
+  let notePanel = document.createElement("SPAN");
+  notePanel.ondblclick = () => GM.notification("X note", "UserNotes");  //XXX
+  notePanel.appendChild(document.createTextNode("  Note: "));
+  notePanel.appendChild(noteNode);
   let del = createButton("un-delete-user", "X", null, () => deleteUser(userId));
-  del.style.cssFloat = "right";
-  div.appendChild(del);
-  //GM.notification("X del: " + del, "UserNotes");  //XXX
+  notePanel.appendChild(del);
+  //GM.notification("X del: " + del, "UserNotes");  //XXX  
 
-  reloadUser(userId, updateUserAugmentation);
+  let userBanner = document.createElement("DIV");
+  userBanner.appendChild(rankPanel);
+  userBanner.appendChild(statusPanel);
+  userBanner.appendChild(notePanel);
   
   let content = document.getElementById("content");
-  content.insertAdjacentElement("afterbegin", div);
+  content.insertAdjacentElement("afterbegin", userBanner);
   //GM.notification("X content: " + content, "UserNotes");  //XXX
+
+  reloadUser(userId, updateUserAugmentation);
 }
 
 
@@ -130,6 +128,7 @@ function incUser(user) {
 
 function deleteUser(userId) {
   //TODO confirm
+  if (userID === "16320675") return;  //XXX
   deleteData(userId);
   reloadUser(userId, updateUserAugmentation);
   //GM.notification("X deleted: " + JSON.stringify(user), "UserNotes");  //XXX
