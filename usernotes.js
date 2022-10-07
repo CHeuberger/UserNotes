@@ -7,7 +7,6 @@
 // @downloadURL  https://github.com/...
 // @include      /^https?:\/\/(.*\.)?stackoverflow\.com\/users\//
 // @include      /^https?:\/\/(.*\.)?stackexchange\.com\/users\//
-// @grant        GM.addStyle
 // @grant        GM.getValue
 // @grant        GM.setValue
 // @grant        GM.deleteValue
@@ -27,15 +26,18 @@ document.body.style.background = "#ffaaaa";  // I am here! //XXX
 //GM.setValue(rankPrefix+"2164365", -2);  //XXX
 //GM.setValue(notePrefix+"2164365", "feel free to write answer - https://stackoverflow.com/a/73943797/16320675");  //XXX
 
-GM.setValue(dataPrefix + "16320675", JSON.stringify({"id":"16320675","name":"<self>","rank":99,"note":"myself"}));  //XXX
+//GM.setValue(dataPrefix + "16320675", JSON.stringify({"id":"16320675","name":"<self>","rank":99,"note":"myself"}));  //XXX
 //GM.setValue(dataPrefix + "2164365",  JSON.stringify({"id":"2164365","name":"Abra","rank":"-3","note":"feel free to write answer - https://stackoverflow.com/a/73943797/16320675"}));  //XXX
 
 
 // user page
 var userBanner;
+var editPanel;
+var editText;
 var statusNode;
 var rankNode;
 var noteNode;
+
 
 const urlTokens = window.location.href.split("/");
 
@@ -57,44 +59,41 @@ if (urlTokens.length >= 6 && urlTokens[3] === "users") {
 
 
 function augmentUserPage(userId) {
-  rankNode = document.createTextNode("");
-  statusNode = document.createTextNode("");
-  noteNode = document.createTextNode("");
+  rankNode = createTextNode("");
+  statusNode = createTextNode("");
+  noteNode = createTextNode("");
+  editText = createTextArea("un-edit-text", "testing");
 
-  let rankPanel = document.createElement("SPAN");
+  let rankPanel = createPanel("un-rank-panel");
   rankPanel.appendChild(createButton("un-dec-rank", "v", () => updateUser(userId, decUser)));
   rankPanel.appendChild(rankNode);
   rankPanel.appendChild(createButton("un-inc-rank", "^", () => updateUser(userId, incUser)));
   //GM.notification("X buttons", "userNotes");  //XXX
-  
-  let statusPanel = document.createElement("SPAN");
-  let italic = document.createElement("I");
-  italic.style.margin = "0 10px";
-  italic.appendChild(statusNode);
-  statusPanel.appendChild(italic);
-  //GM.notification("X statusNode: " + statusNode, "UserNotes");  //XXX
 
-  let noteForm = document.createElement("FORM");
-  noteForm.style.visibility = "hidden";
-  noteForm.style.float = "left";
-  let noteText = document.createElement("TEXTAREA");
-  noteText.appendChild(document.createTextNode("test"));  //XXX
-  noteForm.appendChild(noteText);
-  
-  let notePanel = document.createElement("SPAN");
-  notePanel.ondblclick = () => updateUser(userId, editNote);
-  notePanel.appendChild(createButton("un-edit-note", "!", () => updateUser(userId, editNote)));  //XXX
-  notePanel.appendChild(document.createTextNode("  Note: "));
+  editPanel = createPanel("un-edit-panel");
+  editPanel.style = "position:absolute;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.5);z-index:1;background-color:lightgray;display:none;";
+  editPanel.appendChild(editText);
+  editPanel.appendChild(createButton("un-save-note", "Save", () => updateUser(userId, noteEdited)));
+  editPanel.appendChild(createButton("un-cancel-note", "Cancel", () => editPanel.style.display="none"));
+
+  let notePanel = createPanel("un-note-panel");
+  notePanel.appendChild(createButton("un-edit-note", "!", () => updateUser(userId, editNote)));
+  notePanel.appendChild(createTextNode("Note: "));
   notePanel.appendChild(noteNode);
   let del = createButton("un-delete-user", "X", null, () => deleteUser(userId));
   notePanel.appendChild(del);
   //GM.notification("X del: " + del, "UserNotes");  //XXX  
   
-  userBanner = document.createElement("DIV");
-  userBanner.appendChild(noteForm);
+  let statusPanel = createPanel("un-status-panel");
+  statusPanel.style = "font-style: italic;";
+  statusPanel.appendChild(statusNode);
+  //GM.notification("X statusNode: " + statusNode, "UserNotes");  //XXX
+  
+  userBanner = createBlock("un-user-banner");
   userBanner.appendChild(rankPanel);
-  userBanner.appendChild(statusPanel);
+  userBanner.appendChild(editPanel);
   userBanner.appendChild(notePanel);
+  userBanner.appendChild(statusPanel);
   
   let content = document.getElementById("content");
   content.insertAdjacentElement("afterbegin", userBanner);
@@ -106,7 +105,7 @@ function augmentUserPage(userId) {
 
 function updateUserAugmentation(user) {
   //GM.notification("X repaint: " + user.id, "userNotes");  //XXX
-  statusNode.textContent = user.new ? "unvoted" : "";
+  statusNode.textContent = user.new ? "no data" : "";
   rankNode.textContent = user.rank;
   noteNode.textContent = user.note;
 }
@@ -116,8 +115,9 @@ function updateUser(userId, execute) {
   //GM.notification("X update: " + userId, "UserNotes");  //XXX
   reloadUser(userId, user => {
     //GM.notification("X reloaded: " + user.id, "userNotes");  //XXX
-    execute(user);
-    saveData(user);
+    if (execute(user)) {
+      saveData(user);
+    }
     updateUserAugmentation(user);
   });
 }
@@ -126,35 +126,79 @@ function updateUser(userId, execute) {
 function decUser(user) {
   //GM.notification("X dec: " + user.id, "UserNotes");  //XXX
   user.rank -= 1;
+  return true;
 }
 
 
 function incUser(user) {
   //GM.notification("X inc: " + user.id, "UserNotes");  //XXX
   user.rank = +user.rank + 1;
+  return true;
 }
 
 
 function deleteUser(userId) {
   //TODO confirm
-  if (userID === "16320675") return;  //XXX
+  //GM.notification("X deleting: " + userId, "UserNotes");  //XXX
+  if (userId === "16320675") return;  //XXX
   deleteData(userId);
   reloadUser(userId, updateUserAugmentation);
-  //GM.notification("X deleted: " + JSON.stringify(user), "UserNotes");  //XXX
+  //GM.notification("X deleted: " + userId, "UserNotes");  //XXX
 }
 
 
 function editNote(user) {
-  GM.notification("X edit: " + user.id, "UserNotes");  //XXX
-  
-  //TODO
+  //GM.notification("X edit: " + user.id, "UserNotes");  //XXX
+  editText.value = user.note;
+  editPanel.style.display = "initial";
+  return false;
+}
+
+
+function noteEdited(user) {
+  editPanel.style.display="none";
+  user.note = editText.value;
+  return true;
+}
+
+
+function createBlock(id) {
+  let block = document.createElement("DIV");
+  block.class = "un-block";
+  block.id = id;
+  return block;
+}
+
+
+function createPanel(id) {
+  let panel = document.createElement("SPAN");
+  panel.class = "un-panel";
+  panel.id = id;
+  return panel;
+}
+
+
+function createTextNode(text) {
+  let node = document.createTextNode(text);
+  return node;
+}
+
+
+function createTextArea(id, text) {
+  let area = document.createElement("TEXTAREA");
+  area.class = "un-textarea";
+  area.id = id;
+  area.value = text;
+  area.style = "display:block;";
+  return area;
 }
 
 
 function createButton(id, text, onclick, ondblclick) {
   let button = document.createElement("BUTTON");
-  button.type = "button";
+  button.class = "un-button";
   button.id = id;
+  button.type = "button";
   button.textContent = text;
   button.onclick = onclick;
   button.ondblclick = ondblclick;
@@ -175,7 +219,7 @@ function saveData(user) {
     user.new = false;
     let data = JSON.stringify(user);
     GM.setValue(dataPrefix + user.id, data);
-    //GM.notification("X save " + user.rank + " to " + dataPrefix + user.id, "userNotes");  //XXX
+    GM.notification("X save: " + data, "userNotes");  //XXX
   }
 }
 
@@ -186,6 +230,7 @@ function readData(userId) {
 
 
 function deleteData(userId) {
+  //GM.notification("X deleting: " + userId, "UserNotes");  //XXX
   if (userId) {
     GM.deleteValue(dataPrefix + userId);
   }
