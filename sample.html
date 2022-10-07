@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.un-fieldset {
+  display: inline-block;
+}
+.un-fieldset:hover .un-dropdown {
+  display: block;
+}
+.un-dropdown {
+  display: none;
+  position: absolute;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.7);
+  padding: 12px 16px;
+  z-index: 1;
+}
+</style>
+</head>
+<body>
+
+  <h1>This is a Heading</h1>
+  <h2>0.3</h2>
+  <p>This is a paragraph.</p>
+  <p>This is a paragraph.</p>
+  
+  <div class="un-user-banner">
+    <div>
+      <fieldset class="un-fieldset" id="un-rank-panel">
+	    <legend> Rank </legend>
+	    <button class="un-button" id="un-rank-down"> v </button>
+	    <output class="un-output" id="rank" name="rank" for="down up"> 0 </output>
+	    <button class="un-button" id="un-rank-up"> ^ </button>
+      </fieldset>
+      <fieldset class="un-fieldset" id="un-note-panel">
+	    <legend for="note"> Note </legend>
+	    <output name="note"> empty </output>
+        <div class="un-dropdown">
+          <div>
+            <legend> Note </legend>
+            <textarea class="un-textarea" id="un-note-edit"> empty </textarea>
+            <div class="un-buttons">
+              <button class="un-button" id="un-note-save"> Save </button>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+  
+  <p>This is a paragraph.</p>
+  <p>This is a paragraph.</p>
+
+</body>
+</html>
+
+

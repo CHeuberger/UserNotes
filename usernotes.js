@@ -32,10 +32,10 @@ GM.setValue(dataPrefix + "16320675", JSON.stringify({"id":"16320675","name":"<se
 
 
 // user page
+var userBanner;
 var statusNode;
 var rankNode;
 var noteNode;
-
 
 const urlTokens = window.location.href.split("/");
 
@@ -73,16 +73,25 @@ function augmentUserPage(userId) {
   italic.appendChild(statusNode);
   statusPanel.appendChild(italic);
   //GM.notification("X statusNode: " + statusNode, "UserNotes");  //XXX
+
+  let noteForm = document.createElement("FORM");
+  noteForm.style.visibility = "hidden";
+  noteForm.style.float = "left";
+  let noteText = document.createElement("TEXTAREA");
+  noteText.appendChild(document.createTextNode("test"));  //XXX
+  noteForm.appendChild(noteText);
   
   let notePanel = document.createElement("SPAN");
-  notePanel.ondblclick = () => GM.notification("X note", "UserNotes");  //XXX
+  notePanel.ondblclick = () => updateUser(userId, editNote);
+  notePanel.appendChild(createButton("un-edit-note", "!", () => updateUser(userId, editNote)));  //XXX
   notePanel.appendChild(document.createTextNode("  Note: "));
   notePanel.appendChild(noteNode);
   let del = createButton("un-delete-user", "X", null, () => deleteUser(userId));
   notePanel.appendChild(del);
   //GM.notification("X del: " + del, "UserNotes");  //XXX  
-
-  let userBanner = document.createElement("DIV");
+  
+  userBanner = document.createElement("DIV");
+  userBanner.appendChild(noteForm);
   userBanner.appendChild(rankPanel);
   userBanner.appendChild(statusPanel);
   userBanner.appendChild(notePanel);
@@ -132,6 +141,13 @@ function deleteUser(userId) {
   deleteData(userId);
   reloadUser(userId, updateUserAugmentation);
   //GM.notification("X deleted: " + JSON.stringify(user), "UserNotes");  //XXX
+}
+
+
+function editNote(user) {
+  GM.notification("X edit: " + user.id, "UserNotes");  //XXX
+  
+  //TODO
 }
 
 
